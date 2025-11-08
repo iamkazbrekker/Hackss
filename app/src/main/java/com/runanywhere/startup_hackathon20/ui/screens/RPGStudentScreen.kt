@@ -182,7 +182,7 @@ fun RPGStudentScreenWithNav(
                     onProfileClick = { selectedTab = 4 }
                 )
 
-                1 -> LeaderboardScreen()
+                1 -> LeaderboardScreen(viewModel = viewModel)
                 2 -> SirRemiChatScreen(
                     viewModel = viewModel,
                     onBack = { selectedTab = 0 }
@@ -191,6 +191,7 @@ fun RPGStudentScreenWithNav(
                 3 -> ResourcesScreen()
                 4 -> ProfileDashboardScreen(
                     knightProfile = knightProfile,
+                    viewModel = viewModel,
                     onLogout = onLogout
                 )
             }

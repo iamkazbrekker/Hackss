@@ -1,5 +1,7 @@
 package com.runanywhere.startup_hackathon20.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -133,6 +136,7 @@ fun ResourcesScreen() {
 
 @Composable
 fun ResourceCard(resource: ResourceItem) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -140,7 +144,8 @@ fun ResourceCard(resource: ResourceItem) {
             containerColor = Color(0xFF4A2F1F)
         ),
         onClick = {
-            // In a real app, open browser with URL
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(resource.url))
+            context.startActivity(intent)
         }
     ) {
         Row(

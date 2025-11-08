@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.runanywhere.startup_hackathon20.data.models.KnightProfile
+import com.runanywhere.startup_hackathon20.viewmodel.EduVentureViewModel
 
 data class LeaderboardEntry(
     val rank: Int,
@@ -29,20 +31,13 @@ data class LeaderboardEntry(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LeaderboardScreen() {
-    val leaderboardData = remember {
-        listOf(
-            LeaderboardEntry(1, "Dragon Slayer", "North Kingdom", 850, 9, "Diamond Sword"),
-            LeaderboardEntry(2, "Wise Scholar", "East Empire", 720, 8, "Golden Sword"),
-            LeaderboardEntry(3, "Swift Blade", "South Lands", 680, 7, "Golden Sword"),
-            LeaderboardEntry(4, "Brave Learner", "West Valley", 450, 5, "Iron Sword"),
-            LeaderboardEntry(5, "Math Warrior", "North Kingdom", 420, 5, "Iron Sword"),
-            LeaderboardEntry(6, "Knowledge Seeker", "East Empire", 380, 4, "Iron Sword"),
-            LeaderboardEntry(7, "Quest Master", "South Lands", 350, 4, "Iron Sword"),
-            LeaderboardEntry(8, "Study Knight", "West Valley", 320, 4, "Iron Sword"),
-            LeaderboardEntry(9, "Book Defender", "North Kingdom", 280, 3, "Wooden Sword"),
-            LeaderboardEntry(10, "Math Champion", "East Empire", 250, 3, "Wooden Sword")
-        )
+fun LeaderboardScreen(viewModel: EduVentureViewModel? = null) {
+    var leaderboard by remember { mutableStateOf<List<KnightProfile>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        viewModel?.let {
+            leaderboard = it.getLeaderboard()
+        }
     }
 
     Box(
@@ -98,8 +93,108 @@ fun LeaderboardScreen() {
                 }
             }
 
-            itemsIndexed(leaderboardData) { index, entry ->
-                LeaderboardCard(entry, index)
+            itemsIndexed(leaderboard) { index, knight ->
+                KnightLeaderboardCard(knight, index + 1)
+            }
+        }
+    }
+}
+
+@Composable
+fun KnightLeaderboardCard(knight: KnightProfile, rank: Int) {
+    val backgroundColor = when (rank) {
+        1 -> Color(0xFFFFD700).copy(alpha = 0.2f)
+        2 -> Color(0xFFC0C0C0).copy(alpha = 0.2f)
+        3 -> Color(0xFFCD7F32).copy(alpha = 0.2f)
+        else -> Color(0xFF4A2F1F)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Rank Badge
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape)
+                    .background(
+                        when (rank) {
+                            1 -> Color(0xFFFFD700)
+                            2 -> Color(0xFFC0C0C0)
+                            3 -> Color(0xFFCD7F32)
+                            else -> Color(0xFF8B4513)
+                        }
+                    )
+                    .border(2.dp, Color(0xFF2C1810), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    when (rank) {
+                        1 -> "🥇"
+                        2 -> "🥈"
+                        3 -> "🥉"
+                        else -> "#$rank"
+                    },
+                    fontSize = if (rank <= 3) 24.sp else 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (rank > 3) Color.White else Color.Black
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    knight.knightName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    "📍 ${knight.region}",
+                    fontSize = 13.sp,
+                    color = Color(0xFFC0C0C0)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "⭐ ${knight.totalXP} XP",
+                        fontSize = 12.sp,
+                        color = Color(0xFFFFD700),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "🗡️ ${knight.equippedWeapon}",
+                        fontSize = 12.sp,
+                        color = Color(0xFFC0C0C0)
+                    )
+                }
+            }
+
+            // Level Badge
+            Surface(
+                color = Color(0xFFFFD700).copy(alpha = 0.3f),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    knight.rank.title,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFFD700)
+                )
             }
         }
     }

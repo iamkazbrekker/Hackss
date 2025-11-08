@@ -17,9 +17,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.runanywhere.startup_hackathon20.data.models.KnightProfile
+import com.runanywhere.startup_hackathon20.viewmodel.EduVentureViewModel
 
 data class ProfileOption(
     val title: String,
@@ -32,6 +34,7 @@ data class ProfileOption(
 @Composable
 fun ProfileDashboardScreen(
     knightProfile: KnightProfile?,
+    viewModel: EduVentureViewModel? = null,
     onEditProfile: () -> Unit = {},
     onChangePassword: () -> Unit = {},
     onContactUs: () -> Unit = {},
@@ -39,6 +42,9 @@ fun ProfileDashboardScreen(
     onNotifications: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
+    var showEditProfile by remember { mutableStateOf(false) }
+    var showChangePassword by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -90,7 +96,10 @@ fun ProfileDashboardScreen(
                             icon = Icons.Default.Edit,
                             title = "Edit Profile",
                             subtitle = "Update your knight information",
-                            onClick = onEditProfile
+                            onClick = {
+                                showEditProfile = true
+                                onEditProfile()
+                            }
                         )
 
                         Divider(
@@ -102,7 +111,10 @@ fun ProfileDashboardScreen(
                             icon = Icons.Default.Lock,
                             title = "Change Password",
                             subtitle = "Secure your account",
-                            onClick = onChangePassword
+                            onClick = {
+                                showChangePassword = true
+                                onChangePassword()
+                            }
                         )
 
                         Divider(
@@ -203,6 +215,29 @@ fun ProfileDashboardScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+    }
+
+    // Show dialogs
+    if (showEditProfile && knightProfile != null && viewModel != null) {
+        EditProfileDialog(
+            knight = knightProfile,
+            onDismiss = { showEditProfile = false },
+            onSave = { name, email, phone ->
+                viewModel.updateProfile(name, email, phone)
+                showEditProfile = false
+            }
+        )
+    }
+
+    if (showChangePassword && viewModel != null) {
+        ChangePasswordDialog(
+            onDismiss = { showChangePassword = false },
+            onChangePassword = { old, new ->
+                viewModel.changePassword(old, new) { result ->
+                    // Handle result - could show a toast or snackbar
+                }
+            }
+        )
     }
 }
 
@@ -362,4 +397,173 @@ fun ProfileOptionItem(
             )
         }
     }
+}
+
+@Composable
+fun EditProfileDialog(
+    knight: KnightProfile,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String) -> Unit
+) {
+    var name by remember { mutableStateOf(knight.knightName) }
+    var email by remember { mutableStateOf(knight.email) }
+    var phone by remember { mutableStateOf(knight.phoneNumber) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Profile", color = Color.White) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Knight Name") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color(0xFF8B7355),
+                        focusedLabelColor = Color(0xFFFFD700),
+                        unfocusedLabelColor = Color(0xFFC0C0C0)
+                    )
+                )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color(0xFF8B7355),
+                        focusedLabelColor = Color(0xFFFFD700),
+                        unfocusedLabelColor = Color(0xFFC0C0C0)
+                    )
+                )
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Phone Number") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color(0xFF8B7355),
+                        focusedLabelColor = Color(0xFFFFD700),
+                        unfocusedLabelColor = Color(0xFFC0C0C0)
+                    )
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(name, email, phone) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFD700),
+                    contentColor = Color(0xFF2C1810)
+                )
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFFC0C0C0))
+            }
+        },
+        containerColor = Color(0xFF2C1810),
+        textContentColor = Color.White
+    )
+}
+
+@Composable
+fun ChangePasswordDialog(
+    onDismiss: () -> Unit,
+    onChangePassword: (String, String) -> Unit
+) {
+    var oldPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Change Password", color = Color.White) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = oldPassword,
+                    onValueChange = { oldPassword = it },
+                    label = { Text("Old Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color(0xFF8B7355),
+                        focusedLabelColor = Color(0xFFFFD700),
+                        unfocusedLabelColor = Color(0xFFC0C0C0)
+                    )
+                )
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("New Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color(0xFF8B7355),
+                        focusedLabelColor = Color(0xFFFFD700),
+                        unfocusedLabelColor = Color(0xFFC0C0C0)
+                    )
+                )
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirm Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color(0xFF8B7355),
+                        focusedLabelColor = Color(0xFFFFD700),
+                        unfocusedLabelColor = Color(0xFFC0C0C0)
+                    )
+                )
+                error?.let {
+                    Text(it, color = Color(0xFFFF6B6B), fontSize = 12.sp)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    when {
+                        newPassword != confirmPassword -> error = "Passwords don't match"
+                        newPassword.length < 6 -> error = "Password too short"
+                        else -> {
+                            onChangePassword(oldPassword, newPassword)
+                            onDismiss()
+                        }
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFD700),
+                    contentColor = Color(0xFF2C1810)
+                )
+            ) {
+                Text("Change Password")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFFC0C0C0))
+            }
+        },
+        containerColor = Color(0xFF2C1810),
+        textContentColor = Color.White
+    )
 }

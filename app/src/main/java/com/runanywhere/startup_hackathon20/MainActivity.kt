@@ -11,14 +11,19 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModelProvider
 import com.runanywhere.startup_hackathon20.data.models.UserRole
 import com.runanywhere.startup_hackathon20.data.repository.RPGRepository
 import com.runanywhere.startup_hackathon20.ui.screens.*
 import com.runanywhere.startup_hackathon20.ui.theme.Startup_hackathon20Theme
 import com.runanywhere.startup_hackathon20.viewmodel.EduVentureViewModel
+import com.runanywhere.startup_hackathon20.viewmodel.EduVentureViewModelFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,95 +37,102 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun EduVentureApp(viewModel: EduVentureViewModel = viewModel()) {
-    val currentUser by viewModel.currentUser.collectAsState()
-    var currentScreen by remember { mutableStateOf("login") }
+sealed class Screen {
+    object RoleSelection : Screen()
+    object StudentLogin : Screen()
+    object StudentHome : Screen()
+    object TeacherHome : Screen()
+}
 
-    // RPG Repository for new knight-themed interface
-    val rpgRepository = remember { RPGRepository.getInstance() }
-    val knightProfile by rpgRepository.knightProfile.collectAsState()
-    val learningRoutes by rpgRepository.learningRoutes.collectAsState()
+@Composable
+fun EduVentureApp() {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val viewModel: EduVentureViewModel = viewModel(
+        factory = EduVentureViewModelFactory(context)
+    )
+
+    val currentUser by viewModel.currentUser.collectAsState()
+    val knightProfile by viewModel.knightProfile.collectAsState()
+    val learningRoutes by viewModel.learningRoutes.collectAsState()
+    val loginError by viewModel.loginError.collectAsState()
+
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.RoleSelection) }
     var selectedModule by remember {
-        mutableStateOf<com.runanywhere.startup_hackathon20.data.models.QuestModule?>(
-            null
-        )
+        mutableStateOf<com.runanywhere.startup_hackathon20.data.models.QuestModule?>(null)
     }
 
-    when {
-        currentUser == null -> {
+    when (currentScreen) {
+        Screen.RoleSelection -> {
             LoginScreen(
                 viewModel = viewModel,
                 onLoginAsStudent = {
-                    currentScreen = "rpg_student_home"
+                    currentScreen = Screen.StudentLogin
                 },
                 onLoginAsTeacher = {
-                    currentScreen = "teacher_home"
+                    viewModel.loginAsTeacher()
+                    currentScreen = Screen.TeacherHome
                 }
             )
         }
-        currentUser?.role == UserRole.STUDENT -> {
-            when (currentScreen) {
-                "module_video" -> {
-                    selectedModule?.let { module ->
-                        ModuleVideoScreen(
-                            module = module,
-                            onBack = {
-                                selectedModule = null
-                                currentScreen = "rpg_student_home"
-                            },
-                            onComplete = {
-                                rpgRepository.completeModule(module.id)
-                                selectedModule = null
-                                currentScreen = "rpg_student_home"
-                            }
-                        )
-                    }
-                }
-                "ai_chat" -> {
-                    AIChatScreen(
-                        viewModel = viewModel,
-                        onBack = { currentScreen = "rpg_student_home" }
-                    )
-                }
-                else -> {
-                    // New RPG-themed student home with bottom navigation
-                    RPGStudentScreenWithNav(
-                        knightProfile = knightProfile,
-                        routes = learningRoutes,
-                        onModuleClick = { module ->
-                            selectedModule = module
-                            currentScreen = "module_video"
-                        },
-                        viewModel = viewModel,
-                        onLogout = {
-                            viewModel.logout()
-                            currentScreen = "login"
+
+        Screen.StudentLogin -> {
+            StudentLoginScreen(
+                onBack = { currentScreen = Screen.RoleSelection },
+                onLogin = { studentId, password ->
+                    coroutineScope.launch {
+                        val success = viewModel.loginStudent(studentId, password)
+                        if (success) {
+                            currentScreen = Screen.StudentHome
                         }
-                    )
-                }
+                    }
+                },
+                errorMessage = loginError
+            )
+        }
+
+        Screen.StudentHome -> {
+            // Check if we need to show module video
+            selectedModule?.let { module ->
+                ModuleVideoScreen(
+                    module = module,
+                    onBack = {
+                        selectedModule = null
+                    },
+                    onComplete = {
+                        coroutineScope.launch {
+                            viewModel.completeModule(module.id)
+                        }
+                        selectedModule = null
+                    }
+                )
+            } ?: run {
+                // Show the main RPG student screen with navigation
+                RPGStudentScreenWithNav(
+                    knightProfile = knightProfile,
+                    routes = learningRoutes,
+                    onModuleClick = { module ->
+                        selectedModule = module
+                    },
+                    viewModel = viewModel,
+                    onLogout = {
+                        viewModel.logout()
+                        currentScreen = Screen.RoleSelection
+                    }
+                )
             }
         }
-        currentUser?.role == UserRole.TEACHER -> {
-            when (currentScreen) {
-                "ai_chat" -> {
-                    AIChatScreen(
-                        viewModel = viewModel,
-                        onBack = { currentScreen = "teacher_home" }
-                    )
+
+        Screen.TeacherHome -> {
+            TeacherHomeScreen(
+                viewModel = viewModel,
+                onNavigateToChat = {
+                    // Could add teacher chat navigation
+                },
+                onNavigateToProfile = {
+                    // Could add profile navigation
                 }
-                else -> {
-                    TeacherHomeScreen(
-                        viewModel = viewModel,
-                        onNavigateToChat = {
-                            currentScreen = "ai_chat"
-                        },
-                        onNavigateToProfile = {
-                            // Could navigate to profile
-                        }
-                    )
-                }
-            }
+            )
         }
     }
 }

@@ -1,22 +1,36 @@
 package com.runanywhere.startup_hackathon20.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.runanywhere.sdk.public.RunAnywhere
 import com.runanywhere.sdk.public.extensions.listAvailableModels
 import com.runanywhere.sdk.models.ModelInfo
 import com.runanywhere.startup_hackathon20.data.models.*
+import com.runanywhere.startup_hackathon20.data.repository.DriveHelper
+import com.runanywhere.startup_hackathon20.data.repository.DriveFile
 import com.runanywhere.startup_hackathon20.data.repository.EduVentureRepository
+import com.runanywhere.startup_hackathon20.data.repository.RPGRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class EduVentureViewModel : ViewModel() {
+class EduVentureViewModel(private val context: Context) : ViewModel() {
 
     private val repository = EduVentureRepository.getInstance()
+    private val rpgRepository = RPGRepository.getInstance(context)
+    private var driveHelper: DriveHelper? = null
 
     // User & Auth
     val currentUser: StateFlow<User?> = repository.currentUser
+
+    // Knight Profile from RPG
+    val knightProfile: StateFlow<KnightProfile?> = rpgRepository.knightProfile
+    val learningRoutes: StateFlow<List<LearningRoute>> = rpgRepository.learningRoutes
+
+    // Login state
+    private val _loginError = MutableStateFlow<String?>(null)
+    val loginError: StateFlow<String?> = _loginError
 
     // Student Data
     val quests: StateFlow<List<Quest>> = repository.quests
@@ -47,6 +61,19 @@ class EduVentureViewModel : ViewModel() {
     private val _statusMessage = MutableStateFlow<String>("Initializing AI...")
     val statusMessage: StateFlow<String> = _statusMessage
 
+    // Google Drive State
+    private val _driveFolderId = MutableStateFlow<String>("")
+    val driveFolderId: StateFlow<String> = _driveFolderId
+
+    private val _availablePDFs = MutableStateFlow<List<DriveFile>>(emptyList())
+    val availablePDFs: StateFlow<List<DriveFile>> = _availablePDFs
+
+    private val _selectedPDF = MutableStateFlow<DriveFile?>(null)
+    val selectedPDF: StateFlow<DriveFile?> = _selectedPDF
+
+    private val _pdfContent = MutableStateFlow<String>("")
+    val pdfContent: StateFlow<String> = _pdfContent
+
     // UI State
     private val _selectedQuest = MutableStateFlow<Quest?>(null)
     val selectedQuest: StateFlow<Quest?> = _selectedQuest
@@ -59,6 +86,114 @@ class EduVentureViewModel : ViewModel() {
 
     init {
         loadAvailableModels()
+        // Initialize database
+        viewModelScope.launch {
+            rpgRepository.initializeDatabase()
+            // Auto-initialize Drive with hardcoded folder ID
+            setDriveFolderId(rpgRepository.DRIVE_FOLDER_ID)
+        }
+    }
+
+    // Student Authentication
+    suspend fun loginStudent(studentId: String, password: String): Boolean {
+        return try {
+            val knight = rpgRepository.login(studentId, password)
+            if (knight == null) {
+                _loginError.value = "Invalid Student ID or Password"
+                false
+            } else {
+                _loginError.value = null
+                true
+            }
+        } catch (e: Exception) {
+            _loginError.value = "Login failed: ${e.message}"
+            false
+        }
+    }
+
+    fun completeModule(moduleId: String) {
+        viewModelScope.launch {
+            rpgRepository.completeModule(moduleId)
+        }
+    }
+
+    suspend fun getLeaderboard(): List<KnightProfile> {
+        return rpgRepository.getLeaderboard()
+    }
+
+    // Profile Management
+    fun updateProfile(name: String, email: String, phone: String) {
+        viewModelScope.launch {
+            rpgRepository.updateProfile(name, email, phone)
+        }
+    }
+
+    fun changePassword(oldPassword: String, newPassword: String, onResult: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            val result = rpgRepository.changePassword(oldPassword, newPassword)
+            onResult(result)
+        }
+    }
+
+    // Initialize Drive Helper
+    fun initializeDriveHelper(context: Context, accountName: String) {
+        driveHelper = DriveHelper(context).apply {
+            initializeDrive(accountName)
+        }
+        _statusMessage.value = "Drive connected - Ready to fetch notes!"
+    }
+
+    // Set Drive Folder ID
+    fun setDriveFolderId(folderId: String) {
+        _driveFolderId.value = folderId
+        // Auto-fetch PDFs when folder is set
+        fetchPDFsFromDrive()
+    }
+
+    // Fetch PDFs from Google Drive
+    fun fetchPDFsFromDrive() {
+        viewModelScope.launch {
+            try {
+                _statusMessage.value = "Fetching notes from Drive..."
+                val pdfs = driveHelper?.fetchPDFsFromFolder(_driveFolderId.value) ?: emptyList()
+                _availablePDFs.value = pdfs
+                _statusMessage.value = "Found ${pdfs.size} PDF(s) in Drive folder"
+            } catch (e: Exception) {
+                _statusMessage.value = "Error fetching PDFs: ${e.message}"
+            }
+        }
+    }
+
+    // Select and load a PDF
+    fun selectPDF(driveFile: DriveFile) {
+        viewModelScope.launch {
+            try {
+                _selectedPDF.value = driveFile
+                _statusMessage.value = "Loading PDF: ${driveFile.name}..."
+                val text = driveHelper?.extractTextFromPDF(driveFile.id) ?: ""
+                _pdfContent.value = text
+                _statusMessage.value = "PDF loaded - Ask me to summarize it!"
+            } catch (e: Exception) {
+                _statusMessage.value = "Error loading PDF: ${e.message}"
+            }
+        }
+    }
+
+    // Summarize the loaded PDF
+    fun summarizePDF() {
+        if (_pdfContent.value.isEmpty()) {
+            _statusMessage.value = "No PDF loaded. Please select a PDF first."
+            return
+        }
+
+        val pdfName = _selectedPDF.value?.name ?: "document"
+        val summarizedContent =
+            driveHelper?.summarizeTextForChat(_pdfContent.value) ?: _pdfContent.value
+
+        sendChatMessage(
+            "Please summarize the key points from this document: $pdfName",
+            context = "PDF Content:\n$summarizedContent"
+        )
     }
 
     // Auth Functions
@@ -72,6 +207,8 @@ class EduVentureViewModel : ViewModel() {
 
     fun logout() {
         repository.logout()
+        rpgRepository.logout()
+        driveHelper?.clearCache()
     }
 
     // Student Functions
@@ -200,7 +337,7 @@ class EduVentureViewModel : ViewModel() {
         // Implementation for completing teacher course modules
     }
 
-    // AI Chat Functions
+    // Enhanced AI Chat Functions - Study Buddy Mode
     fun sendChatMessage(message: String, context: String = "") {
         if (_currentModelId.value == null) {
             _statusMessage.value = "Please load an AI model first"
@@ -212,22 +349,10 @@ class EduVentureViewModel : ViewModel() {
         viewModelScope.launch {
             _isAIChatLoading.value = true
             try {
-                val fullPrompt = if (context.isNotEmpty()) {
-                    """
-                    You are an educational AI assistant helping students learn.
-                    
-                    Context: $context
-                    
-                    Student question: $message
-                    
-                    Provide a clear, educational response.
-                    """.trimIndent()
-                } else {
-                    message
-                }
+                val studyBuddyPrompt = buildStudyBuddyPrompt(message, context)
 
                 var assistantResponse = ""
-                RunAnywhere.generateStream(fullPrompt).collect { token ->
+                RunAnywhere.generateStream(studyBuddyPrompt).collect { token ->
                     assistantResponse += token
 
                     val currentMessages = _chatMessages.value.toMutableList()
@@ -245,6 +370,41 @@ class EduVentureViewModel : ViewModel() {
                 _chatMessages.value += ChatMessage("Error: ${e.message}", isUser = false)
             }
             _isAIChatLoading.value = false
+        }
+    }
+
+    private fun buildStudyBuddyPrompt(message: String, context: String): String {
+        return if (context.isNotEmpty()) {
+            """
+            You are Sir Remi, a friendly and knowledgeable study buddy. You help students with:
+            - Answering questions about study materials and notes
+            - Summarizing documents and PDFs
+            - Explaining complex topics in simple terms
+            - Providing study tips and motivation
+            - Answering everyday questions
+            - Breaking down problems step-by-step
+            
+            Context/Document Content:
+            $context
+            
+            Student's Question: $message
+            
+            Provide a helpful, encouraging response. Be friendly and supportive.
+            """.trimIndent()
+        } else {
+            """
+            You are Sir Remi, a friendly and knowledgeable study buddy. You help students with:
+            - Answering academic questions
+            - Explaining concepts in simple terms  
+            - Providing study tips and strategies
+            - Offering motivation and encouragement
+            - Answering everyday questions about various topics
+            - Breaking down complex problems step-by-step
+            
+            Student's Question: $message
+            
+            Provide a helpful, clear, and encouraging response. Be friendly and supportive, like a good friend helping with studies.
+            """.trimIndent()
         }
     }
 
@@ -289,7 +449,7 @@ class EduVentureViewModel : ViewModel() {
                 val success = RunAnywhere.loadModel(modelId)
                 if (success) {
                     _currentModelId.value = modelId
-                    _statusMessage.value = "AI Ready! Start chatting or generate content."
+                    _statusMessage.value = "Sir Remi is ready! Ask me anything."
                 } else {
                     _statusMessage.value = "Failed to load model"
                 }

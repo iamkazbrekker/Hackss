@@ -1,10 +1,18 @@
 package com.runanywhere.startup_hackathon20.data.models
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.serialization.Serializable
 
 @Serializable
+@Entity(tableName = "knight_profiles")
 data class KnightProfile(
-    val id: String,
+    @PrimaryKey val id: String,
+    val studentId: String, // For login
+    val passwordHash: String, // Hashed password
     val knightName: String,
     val rank: KnightRank,
     val totalXP: Int,
@@ -14,7 +22,10 @@ data class KnightProfile(
     val unlockedRoutes: List<String>,
     val badges: List<Badge>,
     val equippedWeapon: String = "Wooden Sword",
-    val equippedArmor: String = "Leather Armor"
+    val equippedArmor: String = "Leather Armor",
+    val email: String = "",
+    val phoneNumber: String = "",
+    val region: String = "North Kingdom" // For leaderboard
 )
 
 enum class KnightRank(val title: String, val xpRequired: Int) {
@@ -34,8 +45,9 @@ data class Badge(
 )
 
 @Serializable
+@Entity(tableName = "learning_routes")
 data class LearningRoute(
-    val id: String,
+    @PrimaryKey val id: String,
     val subject: String,
     val routeName: String,
     val description: String,
@@ -91,3 +103,61 @@ data class CombatResult(
     val damageDealt: Int,
     val damageTaken: Int
 )
+
+// Room Type Converters
+class Converters {
+    private val gson = Gson()
+
+    @TypeConverter
+    fun fromStringList(value: List<String>): String {
+        return gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toStringList(value: String): List<String> {
+        val listType = object : TypeToken<List<String>>() {}.type
+        return gson.fromJson(value, listType)
+    }
+
+    @TypeConverter
+    fun fromBadgeList(value: List<Badge>): String {
+        return gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toBadgeList(value: String): List<Badge> {
+        val listType = object : TypeToken<List<Badge>>() {}.type
+        return gson.fromJson(value, listType)
+    }
+
+    @TypeConverter
+    fun fromKnightRank(value: KnightRank): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toKnightRank(value: String): KnightRank {
+        return KnightRank.valueOf(value)
+    }
+
+    @TypeConverter
+    fun fromModuleList(value: List<QuestModule>): String {
+        return gson.toJson(value)
+    }
+
+    @TypeConverter
+    fun toModuleList(value: String): List<QuestModule> {
+        val listType = object : TypeToken<List<QuestModule>>() {}.type
+        return gson.fromJson(value, listType)
+    }
+
+    @TypeConverter
+    fun fromRouteTheme(value: RouteTheme): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toRouteTheme(value: String): RouteTheme {
+        return RouteTheme.valueOf(value)
+    }
+}

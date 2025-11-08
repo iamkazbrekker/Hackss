@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,9 +34,12 @@ fun SirRemiChatScreen(
     val currentModelId by viewModel.currentModelId.collectAsState()
     val availableModels by viewModel.availableModels.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
+    val availablePDFs by viewModel.availablePDFs.collectAsState()
+    val selectedPDF by viewModel.selectedPDF.collectAsState()
 
     var inputText by remember { mutableStateOf("") }
     var showModelSelector by remember { mutableStateOf(false) }
+    var showPDFSelector by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     Scaffold(
@@ -49,7 +53,7 @@ fun SirRemiChatScreen(
                             color = Color.White
                         )
                         Text(
-                            "Your Knight Companion",
+                            "Your Study Buddy",
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -61,6 +65,15 @@ fun SirRemiChatScreen(
                     }
                 },
                 actions = {
+                    // PDF Selector Button
+                    IconButton(onClick = { showPDFSelector = !showPDFSelector }) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "PDFs",
+                            tint = Color.White
+                        )
+                    }
+                    // Model Selector Button
                     TextButton(onClick = { showModelSelector = !showModelSelector }) {
                         Text("AI Model", color = Color.White)
                     }
@@ -98,6 +111,33 @@ fun SirRemiChatScreen(
                         onLoad = { modelId -> viewModel.loadModel(modelId) },
                         onRefresh = { viewModel.refreshModels() }
                     )
+                }
+
+                // PDF Selector (collapsible)
+                if (showPDFSelector) {
+                    PDFSelectorPanel(
+                        availablePDFs = availablePDFs,
+                        selectedPDF = selectedPDF,
+                        onSelectPDF = { pdf -> viewModel.selectPDF(pdf) },
+                        onSummarizePDF = { viewModel.summarizePDF() },
+                        onSetFolderId = { folderId -> viewModel.setDriveFolderId(folderId) },
+                        onRefresh = { viewModel.fetchPDFsFromDrive() }
+                    )
+                }
+
+                // Status message
+                if (statusMessage.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFF4A2F1F)
+                    ) {
+                        Text(
+                            statusMessage,
+                            modifier = Modifier.padding(8.dp),
+                            fontSize = 12.sp,
+                            color = Color(0xFFFFD700)
+                        )
+                    }
                 }
 
                 // Messages List
@@ -251,10 +291,51 @@ fun SirRemiEmptyState() {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            "I am Sir Remi, your loyal companion on this quest for knowledge. Ask me anything about your studies, and I shall aid you in your journey!",
+            "I am Sir Remi, your friendly study buddy! I can help you with:",
             fontSize = 14.sp,
             color = Color(0xFFE0E0E0),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // List of capabilities
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
+        ) {
+            CapabilityItem("📝", "Summarize your study notes and PDFs")
+            CapabilityItem("❓", "Answer questions about any topic")
+            CapabilityItem("📚", "Explain complex concepts simply")
+            CapabilityItem("💡", "Provide study tips and strategies")
+            CapabilityItem("🎯", "Break down problems step-by-step")
+            CapabilityItem("💬", "Chat about everyday topics")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            "Connect your Google Drive to access your notes, or just start asking questions!",
+            fontSize = 12.sp,
+            color = Color(0xFF8B7355),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun CapabilityItem(icon: String, text: String) {
+    Row(
+        modifier = Modifier.padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            icon,
+            fontSize = 20.sp,
+            modifier = Modifier.width(32.dp)
+        )
+        Text(
+            text,
+            fontSize = 13.sp,
+            color = Color(0xFFE0E0E0)
         )
     }
 }
@@ -574,6 +655,172 @@ fun ModelItemCompact(
                         Text("Load")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun PDFSelectorPanel(
+    availablePDFs: List<com.runanywhere.startup_hackathon20.data.repository.DriveFile>,
+    selectedPDF: com.runanywhere.startup_hackathon20.data.repository.DriveFile?,
+    onSelectPDF: (com.runanywhere.startup_hackathon20.data.repository.DriveFile) -> Unit,
+    onSummarizePDF: () -> Unit,
+    onSetFolderId: (String) -> Unit,
+    onRefresh: () -> Unit
+) {
+    var folderIdInput by remember { mutableStateOf("") }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF4A2F1F),
+        shadowElevation = 4.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                "📚 Study Notes from Drive",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFFFD700)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Folder ID Input
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = folderIdInput,
+                    onValueChange = { folderIdInput = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Enter Drive Folder ID", fontSize = 12.sp) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color(0xFF2C1810),
+                        unfocusedContainerColor = Color(0xFF2C1810),
+                        disabledContainerColor = Color(0xFF2C1810),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color(0xFFFFD700),
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color(0xFF8B7355)
+                    ),
+                    singleLine = true
+                )
+
+                Button(
+                    onClick = { onSetFolderId(folderIdInput) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFD700)
+                    )
+                ) {
+                    Text("Load", color = Color(0xFF2C1810))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Selected PDF
+            selectedPDF?.let { pdf ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF2C1810)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "✓ ${pdf.name}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD700)
+                            )
+                            Text(
+                                "${pdf.size / 1024} KB",
+                                fontSize = 12.sp,
+                                color = Color(0xFFC0C0C0)
+                            )
+                        }
+
+                        Button(
+                            onClick = onSummarizePDF,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFD700)
+                            )
+                        ) {
+                            Text("Summarize", color = Color(0xFF2C1810), fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // PDF List
+            if (availablePDFs.isNotEmpty()) {
+                Text(
+                    "Available Notes (${availablePDFs.size})",
+                    fontSize = 14.sp,
+                    color = Color(0xFFC0C0C0)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                availablePDFs.take(5).forEach { pdf ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (pdf.id == selectedPDF?.id)
+                                Color(0xFF5C3D2E)
+                            else
+                                Color(0xFF3D2417)
+                        ),
+                        onClick = { onSelectPDF(pdf) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    pdf.name,
+                                    fontSize = 13.sp,
+                                    color = Color.White
+                                )
+                                Text(
+                                    "${pdf.size / 1024} KB",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF8B7355)
+                                )
+                            }
+
+                            if (pdf.id == selectedPDF?.id) {
+                                Text("✓", fontSize = 16.sp, color = Color(0xFFFFD700))
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(onClick = onRefresh) {
+                Text("Refresh PDFs", color = Color(0xFFFFD700))
             }
         }
     }
