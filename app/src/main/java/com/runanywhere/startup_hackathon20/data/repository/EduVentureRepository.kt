@@ -1,6 +1,7 @@
 package com.runanywhere.startup_hackathon20.data.repository
 
 import com.runanywhere.startup_hackathon20.data.models.*
+import com.runanywhere.startup_hackathon20.ui.screens.ResourceItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
@@ -25,6 +26,19 @@ class EduVentureRepository {
     private val _classRooms = MutableStateFlow<List<ClassRoom>>(emptyList())
     val classRooms: StateFlow<List<ClassRoom>> = _classRooms
 
+    // New StateFlows for enhanced teacher features
+    private val _techDevelopmentCourses = MutableStateFlow<List<TechDevelopmentCourse>>(emptyList())
+    val techDevelopmentCourses: StateFlow<List<TechDevelopmentCourse>> = _techDevelopmentCourses
+
+    private val _resourceHubItems = MutableStateFlow<List<ResourceHubItem>>(emptyList())
+    val resourceHubItems: StateFlow<List<ResourceHubItem>> = _resourceHubItems
+
+    private val _studentInsights = MutableStateFlow<List<StudentPerformanceInsight>>(emptyList())
+    val studentInsights: StateFlow<List<StudentPerformanceInsight>> = _studentInsights
+
+    private val _progressDashboards = MutableStateFlow<List<ProgressDashboard>>(emptyList())
+    val progressDashboards: StateFlow<List<ProgressDashboard>> = _progressDashboards
+
     init {
         // Initialize with mock data
         initializeMockData()
@@ -40,6 +54,11 @@ class EduVentureRepository {
         _teacherCourses.value = createMockTeacherCourses()
         _sharedResources.value = createMockSharedResources()
         _classRooms.value = createMockClassRooms()
+        // Initialize new teacher features
+        _techDevelopmentCourses.value = createMockTechCourses()
+        _resourceHubItems.value = createMockResourceHub()
+        _studentInsights.value = createMockStudentInsights()
+        _progressDashboards.value = createMockProgressDashboards()
     }
 
     fun logout() {
@@ -48,6 +67,10 @@ class EduVentureRepository {
         _teacherCourses.value = emptyList()
         _sharedResources.value = emptyList()
         _classRooms.value = emptyList()
+        _techDevelopmentCourses.value = emptyList()
+        _resourceHubItems.value = emptyList()
+        _studentInsights.value = emptyList()
+        _progressDashboards.value = emptyList()
     }
 
     fun earnXP(amount: Int) {
@@ -391,6 +414,596 @@ class EduVentureRepository {
                     )
                 ),
                 createdAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    // Create mock data for new teacher features
+    private fun createMockTechCourses(): List<TechDevelopmentCourse> {
+        return listOf(
+            TechDevelopmentCourse(
+                id = "tech_1",
+                title = "AI in Education: ChatGPT & Beyond",
+                description = "Master the latest AI tools transforming classrooms. Learn how to integrate ChatGPT, Gemini, and other AI assistants into your teaching",
+                technology = "Artificial Intelligence",
+                category = TechCategory.ARTIFICIAL_INTELLIGENCE,
+                difficulty = CourseDifficulty.BEGINNER,
+                duration = "3 weeks",
+                instructor = "Dr. Sarah Chen",
+                thumbnail = "ai_education.png",
+                modules = listOf(
+                    TechCourseModule(
+                        id = "mod_1",
+                        moduleNumber = 1,
+                        title = "Introduction to AI in Education",
+                        description = "Understanding AI's role in modern classrooms",
+                        content = "Learn about the fundamentals of AI and its applications in education...",
+                        videoUrl = "https://youtube.com/watch?v=ai-intro",
+                        estimatedTime = "45 mins",
+                        resources = listOf("AI Basics PDF", "Case Studies"),
+                        isCompleted = false
+                    ),
+                    TechCourseModule(
+                        id = "mod_2",
+                        moduleNumber = 2,
+                        title = "Using ChatGPT for Lesson Planning",
+                        description = "Practical applications of ChatGPT",
+                        content = "Discover how to use ChatGPT to create engaging lesson plans...",
+                        videoUrl = "https://youtube.com/watch?v=chatgpt-lessons",
+                        estimatedTime = "60 mins",
+                        resources = listOf("Prompt Templates", "Best Practices Guide"),
+                        isCompleted = false
+                    )
+                ),
+                xpReward = 150,
+                certificationAvailable = true,
+                enrolledCount = 234,
+                rating = 4.8f,
+                releaseYear = 2024,
+                tags = listOf("AI", "beginner-friendly", "certification", "trending"),
+                progress = 0.3f,
+                isEnrolled = true
+            ),
+            TechDevelopmentCourse(
+                id = "tech_2",
+                title = "Building Interactive Web Apps with React",
+                description = "Create modern, interactive educational web applications using React and Next.js",
+                technology = "React/Next.js",
+                category = TechCategory.WEB_DEVELOPMENT,
+                difficulty = CourseDifficulty.INTERMEDIATE,
+                duration = "5 weeks",
+                instructor = "Prof. Michael Rodriguez",
+                thumbnail = "react_course.png",
+                modules = listOf(),
+                xpReward = 200,
+                certificationAvailable = true,
+                enrolledCount = 156,
+                rating = 4.6f,
+                releaseYear = 2024,
+                tags = listOf("web-dev", "react", "hands-on", "trending"),
+                progress = 0f,
+                isEnrolled = false
+            ),
+            TechDevelopmentCourse(
+                id = "tech_3",
+                title = "Data Science for Educators",
+                description = "Analyze student performance data and create insights using Python and data visualization",
+                technology = "Python/Data Science",
+                category = TechCategory.DATA_SCIENCE,
+                difficulty = CourseDifficulty.INTERMEDIATE,
+                duration = "4 weeks",
+                instructor = "Dr. Emily Watson",
+                thumbnail = "data_science.png",
+                modules = listOf(),
+                xpReward = 180,
+                certificationAvailable = true,
+                enrolledCount = 89,
+                rating = 4.7f,
+                releaseYear = 2024,
+                tags = listOf("python", "analytics", "certification"),
+                progress = 0f,
+                isEnrolled = false
+            ),
+            TechDevelopmentCourse(
+                id = "tech_4",
+                title = "Mobile App Development with Flutter",
+                description = "Build cross-platform educational apps for iOS and Android",
+                technology = "Flutter/Dart",
+                category = TechCategory.MOBILE_DEVELOPMENT,
+                difficulty = CourseDifficulty.ADVANCED,
+                duration = "6 weeks",
+                instructor = "Prof. James Lee",
+                thumbnail = "flutter_course.png",
+                modules = listOf(),
+                xpReward = 250,
+                certificationAvailable = true,
+                enrolledCount = 67,
+                rating = 4.9f,
+                releaseYear = 2024,
+                tags = listOf("mobile", "flutter", "advanced", "hands-on"),
+                progress = 0f,
+                isEnrolled = false
+            ),
+            TechDevelopmentCourse(
+                id = "tech_5",
+                title = "Cloud Computing with AWS for Education",
+                description = "Deploy and manage educational platforms on AWS cloud infrastructure",
+                technology = "AWS/Cloud",
+                category = TechCategory.CLOUD_COMPUTING,
+                difficulty = CourseDifficulty.INTERMEDIATE,
+                duration = "4 weeks",
+                instructor = "Sarah Johnson",
+                thumbnail = "aws_course.png",
+                modules = listOf(),
+                xpReward = 190,
+                certificationAvailable = true,
+                enrolledCount = 112,
+                rating = 4.5f,
+                releaseYear = 2024,
+                tags = listOf("cloud", "aws", "infrastructure"),
+                progress = 0f,
+                isEnrolled = false
+            )
+        )
+    }
+
+    private fun createMockResourceHub(): List<ResourceHubItem> {
+        return listOf(
+            ResourceHubItem(
+                id = "rh_1",
+                title = "Complete Machine Learning Course - Andrew Ng",
+                description = "Stanford's legendary ML course. Perfect for understanding AI fundamentals before applying them in education",
+                type = ResourceHubType.COURSE,
+                category = TechCategory.ARTIFICIAL_INTELLIGENCE,
+                url = "https://www.coursera.org/learn/machine-learning",
+                thumbnail = "ml_course.jpg",
+                provider = "Coursera",
+                isFree = false,
+                rating = 4.9f,
+                duration = "11 weeks",
+                addedBy = "Prof. Sarah Johnson",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("AI", "ML", "foundational", "stanford"),
+                viewCount = 523,
+                bookmarked = true
+            ),
+            ResourceHubItem(
+                id = "rh_2",
+                title = "React Official Documentation",
+                description = "Official React docs - the best place to learn modern React with hooks and server components",
+                type = ResourceHubType.DOCUMENTATION,
+                category = TechCategory.WEB_DEVELOPMENT,
+                url = "https://react.dev",
+                thumbnail = "react_docs.png",
+                provider = "React Team",
+                isFree = true,
+                rating = 4.8f,
+                duration = null,
+                addedBy = "Dr. Michael Brown",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("react", "web", "documentation", "official"),
+                viewCount = 892,
+                bookmarked = true
+            ),
+            ResourceHubItem(
+                id = "rh_3",
+                title = "Python for Data Analysis - Wes McKinney",
+                description = "Comprehensive guide to data manipulation with pandas",
+                type = ResourceHubType.BOOK,
+                category = TechCategory.DATA_SCIENCE,
+                url = "https://wesmckinney.com/book/",
+                thumbnail = "python_data.jpg",
+                provider = "O'Reilly",
+                isFree = true,
+                rating = 4.7f,
+                duration = null,
+                addedBy = "Dr. Emily Watson",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("python", "pandas", "data-science", "free"),
+                viewCount = 445,
+                bookmarked = false
+            ),
+            ResourceHubItem(
+                id = "rh_4",
+                title = "Fireship - Flutter Tutorial",
+                description = "Build a complete app in 100 seconds! Fast-paced Flutter intro",
+                type = ResourceHubType.VIDEO_TUTORIAL,
+                category = TechCategory.MOBILE_DEVELOPMENT,
+                url = "https://www.youtube.com/watch?v=1xipg02Wu8s",
+                thumbnail = "fireship_flutter.jpg",
+                provider = "YouTube - Fireship",
+                isFree = true,
+                rating = 4.9f,
+                duration = "12 mins",
+                addedBy = "Prof. James Lee",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("flutter", "mobile", "video", "quick-start"),
+                viewCount = 1234,
+                bookmarked = true
+            ),
+            ResourceHubItem(
+                id = "rh_5",
+                title = "AWS Free Tier Guide",
+                description = "Complete guide to AWS free tier services for education",
+                type = ResourceHubType.ARTICLE,
+                category = TechCategory.CLOUD_COMPUTING,
+                url = "https://aws.amazon.com/free/",
+                thumbnail = "aws_free.png",
+                provider = "AWS",
+                isFree = true,
+                rating = 4.6f,
+                duration = "15 mins read",
+                addedBy = "Sarah Johnson",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("aws", "cloud", "free-tier", "guide"),
+                viewCount = 678,
+                bookmarked = false
+            ),
+            ResourceHubItem(
+                id = "rh_6",
+                title = "GitHub Student Developer Pack",
+                description = "Free developer tools and cloud credits for education",
+                type = ResourceHubType.TOOL,
+                category = TechCategory.DEVOPS,
+                url = "https://education.github.com/pack",
+                thumbnail = "github_student.png",
+                provider = "GitHub",
+                isFree = true,
+                rating = 5.0f,
+                duration = null,
+                addedBy = "Prof. Sarah Johnson",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("github", "free", "tools", "student"),
+                viewCount = 956,
+                bookmarked = true
+            ),
+            ResourceHubItem(
+                id = "rh_7",
+                title = "Tailwind CSS Documentation",
+                description = "Utility-first CSS framework documentation",
+                type = ResourceHubType.DOCUMENTATION,
+                category = TechCategory.WEB_DEVELOPMENT,
+                url = "https://tailwindcss.com/docs",
+                thumbnail = "tailwind_docs.png",
+                provider = "Tailwind Labs",
+                isFree = true,
+                rating = 4.8f,
+                duration = null,
+                addedBy = "Dr. Michael Brown",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("css", "tailwind", "web", "styling"),
+                viewCount = 534,
+                bookmarked = false
+            ),
+            ResourceHubItem(
+                id = "rh_8",
+                title = "Awesome Educational Games Repository",
+                description = "Curated list of open-source educational games and resources",
+                type = ResourceHubType.GITHUB_REPO,
+                category = TechCategory.GAME_DEVELOPMENT,
+                url = "https://github.com/topics/educational-games",
+                thumbnail = "github_games.png",
+                provider = "GitHub",
+                isFree = true,
+                rating = 4.7f,
+                duration = null,
+                addedBy = "Prof. James Lee",
+                addedAt = System.currentTimeMillis(),
+                tags = listOf("games", "open-source", "education", "github"),
+                viewCount = 321,
+                bookmarked = false
+            )
+        )
+    }
+
+    private fun createMockStudentInsights(): List<StudentPerformanceInsight> {
+        return listOf(
+            StudentPerformanceInsight(
+                studentId = "s1",
+                studentName = "Emma Wilson",
+                classId = "class_1",
+                overallPerformance = PerformanceMetrics(
+                    averageScore = 92.5f,
+                    totalXP = 650,
+                    level = 7,
+                    questsCompleted = 8,
+                    totalQuests = 10,
+                    currentStreak = 5,
+                    longestStreak = 12,
+                    performanceTrend = TrendDirection.UP
+                ),
+                subjectPerformance = listOf(
+                    SubjectPerformance(
+                        subject = "Mathematics",
+                        averageScore = 95.0f,
+                        questsCompleted = 5,
+                        totalQuests = 6,
+                        timeSpent = 320,
+                        lastActivity = System.currentTimeMillis(),
+                        mastery = MasteryLevel.ADVANCED
+                    ),
+                    SubjectPerformance(
+                        subject = "Science",
+                        averageScore = 90.0f,
+                        questsCompleted = 3,
+                        totalQuests = 4,
+                        timeSpent = 180,
+                        lastActivity = System.currentTimeMillis() - 86400000,
+                        mastery = MasteryLevel.PROFICIENT
+                    )
+                ),
+                learningPattern = LearningPattern(
+                    preferredLearningStyle = LearningStyle.VISUAL,
+                    mostActiveTimeOfDay = TimeOfDay.EVENING,
+                    averageSessionDuration = 45,
+                    completionRate = 0.85f,
+                    retryRate = 0.15f
+                ),
+                recommendations = listOf(
+                    "Continue challenging Emma with advanced problems",
+                    "Encourage peer tutoring opportunities",
+                    "Consider accelerated learning path"
+                ),
+                strengths = listOf(
+                    StrengthArea("Algebra", 98.0f, "Exceptional problem-solving skills"),
+                    StrengthArea("Geometry", 94.0f, "Strong spatial reasoning")
+                ),
+                improvementAreas = listOf(
+                    ImprovementArea(
+                        "Calculus",
+                        75.0f,
+                        90.0f,
+                        listOf(
+                            "Additional practice problems",
+                            "Video tutorials",
+                            "One-on-one sessions"
+                        )
+                    )
+                ),
+                engagementMetrics = EngagementMetrics(
+                    totalLoginDays = 45,
+                    averageSessionsPerWeek = 6.5f,
+                    totalTimeSpent = 1200,
+                    chatInteractions = 34,
+                    resourcesAccessed = 28,
+                    engagementLevel = EngagementLevel.HIGH
+                ),
+                lastUpdated = System.currentTimeMillis()
+            ),
+            StudentPerformanceInsight(
+                studentId = "s2",
+                studentName = "James Rodriguez",
+                classId = "class_1",
+                overallPerformance = PerformanceMetrics(
+                    averageScore = 75.0f,
+                    totalXP = 480,
+                    level = 5,
+                    questsCompleted = 5,
+                    totalQuests = 10,
+                    currentStreak = 2,
+                    longestStreak = 8,
+                    performanceTrend = TrendDirection.STABLE
+                ),
+                subjectPerformance = listOf(
+                    SubjectPerformance(
+                        subject = "Mathematics",
+                        averageScore = 78.0f,
+                        questsCompleted = 3,
+                        totalQuests = 6,
+                        timeSpent = 240,
+                        lastActivity = System.currentTimeMillis() - 172800000,
+                        mastery = MasteryLevel.DEVELOPING
+                    )
+                ),
+                learningPattern = LearningPattern(
+                    preferredLearningStyle = LearningStyle.KINESTHETIC,
+                    mostActiveTimeOfDay = TimeOfDay.AFTERNOON,
+                    averageSessionDuration = 30,
+                    completionRate = 0.60f,
+                    retryRate = 0.35f
+                ),
+                recommendations = listOf(
+                    "Provide more hands-on activities",
+                    "Break complex problems into smaller steps",
+                    "Regular check-ins to maintain motivation"
+                ),
+                strengths = listOf(
+                    StrengthArea("Problem Solving", 82.0f, "Good logical thinking")
+                ),
+                improvementAreas = listOf(
+                    ImprovementArea(
+                        "Word Problems",
+                        65.0f,
+                        80.0f,
+                        listOf(
+                            "More practice with real-world examples",
+                            "Visual aids",
+                            "Group work"
+                        )
+                    ),
+                    ImprovementArea(
+                        "Time Management",
+                        60.0f,
+                        85.0f,
+                        listOf("Set timers for practice", "Break tasks into chunks")
+                    )
+                ),
+                engagementMetrics = EngagementMetrics(
+                    totalLoginDays = 28,
+                    averageSessionsPerWeek = 3.5f,
+                    totalTimeSpent = 720,
+                    chatInteractions = 15,
+                    resourcesAccessed = 12,
+                    engagementLevel = EngagementLevel.MODERATE
+                ),
+                lastUpdated = System.currentTimeMillis()
+            )
+        )
+    }
+
+    private fun createMockProgressDashboards(): List<ProgressDashboard> {
+        return listOf(
+            ProgressDashboard(
+                classId = "class_1",
+                className = "Mathematics 101 - Morning Section",
+                totalStudents = 25,
+                activeStudents = 18,
+                averageClassScore = 82.5f,
+                averageClassLevel = 6.2f,
+                totalQuestsCompleted = 127,
+                classEngagement = 75.0f,
+                performanceDistribution = PerformanceDistribution(
+                    excellent = 6,
+                    good = 9,
+                    average = 7,
+                    needsImprovement = 2,
+                    struggling = 1
+                ),
+                weeklyProgress = listOf(
+                    WeeklyProgressData(
+                        weekNumber = 1,
+                        startDate = System.currentTimeMillis() - 604800000 * 4,
+                        endDate = System.currentTimeMillis() - 604800000 * 3,
+                        averageScore = 78.0f,
+                        questsCompleted = 28,
+                        activeStudents = 22,
+                        totalXPEarned = 1400
+                    ),
+                    WeeklyProgressData(
+                        weekNumber = 2,
+                        startDate = System.currentTimeMillis() - 604800000 * 3,
+                        endDate = System.currentTimeMillis() - 604800000 * 2,
+                        averageScore = 80.5f,
+                        questsCompleted = 32,
+                        activeStudents = 20,
+                        totalXPEarned = 1600
+                    ),
+                    WeeklyProgressData(
+                        weekNumber = 3,
+                        startDate = System.currentTimeMillis() - 604800000 * 2,
+                        endDate = System.currentTimeMillis() - 604800000,
+                        averageScore = 82.0f,
+                        questsCompleted = 35,
+                        activeStudents = 19,
+                        totalXPEarned = 1750
+                    ),
+                    WeeklyProgressData(
+                        weekNumber = 4,
+                        startDate = System.currentTimeMillis() - 604800000,
+                        endDate = System.currentTimeMillis(),
+                        averageScore = 84.5f,
+                        questsCompleted = 32,
+                        activeStudents = 18,
+                        totalXPEarned = 1600
+                    )
+                ),
+                topPerformers = listOf(
+                    TopPerformer(
+                        studentId = "s1",
+                        studentName = "Emma Wilson",
+                        score = 95.0f,
+                        level = 7,
+                        questsCompleted = 8,
+                        rank = 1
+                    ),
+                    TopPerformer(
+                        studentId = "s3",
+                        studentName = "Alex Chen",
+                        score = 92.0f,
+                        level = 7,
+                        questsCompleted = 7,
+                        rank = 2
+                    ),
+                    TopPerformer(
+                        studentId = "s4",
+                        studentName = "Sofia Martinez",
+                        score = 90.5f,
+                        level = 6,
+                        questsCompleted = 7,
+                        rank = 3
+                    )
+                ),
+                studentsNeedingHelp = listOf(
+                    StudentAlert(
+                        studentId = "s5",
+                        studentName = "Ryan Thompson",
+                        alertType = AlertType.DECLINING_PERFORMANCE,
+                        severity = AlertSeverity.HIGH,
+                        message = "Score dropped from 75% to 58% in last 2 weeks",
+                        suggestedActions = listOf(
+                            "Schedule one-on-one meeting",
+                            "Review recent quiz results",
+                            "Provide additional resources"
+                        ),
+                        timestamp = System.currentTimeMillis()
+                    ),
+                    StudentAlert(
+                        studentId = "s6",
+                        studentName = "Maya Patel",
+                        alertType = AlertType.LOW_ENGAGEMENT,
+                        severity = AlertSeverity.MEDIUM,
+                        message = "No activity in last 5 days",
+                        suggestedActions = listOf(
+                            "Send reminder message",
+                            "Check for technical issues",
+                            "Contact parents if needed"
+                        ),
+                        timestamp = System.currentTimeMillis()
+                    ),
+                    StudentAlert(
+                        studentId = "s7",
+                        studentName = "Lucas Brown",
+                        alertType = AlertType.STRUGGLING_WITH_TOPIC,
+                        severity = AlertSeverity.MEDIUM,
+                        message = "Difficulty with quadratic equations (3 failed attempts)",
+                        suggestedActions = listOf(
+                            "Assign supplementary video",
+                            "Recommend peer study group",
+                            "Offer extra practice problems"
+                        ),
+                        timestamp = System.currentTimeMillis()
+                    )
+                ),
+                subjectBreakdown = listOf(
+                    SubjectStats(
+                        subject = "Algebra",
+                        averageScore = 85.0f,
+                        totalQuests = 45,
+                        completedQuests = 38,
+                        studentsExcelling = 12,
+                        studentsStruggling = 3,
+                        mostCommonMistakes = listOf(
+                            "Sign errors in equations",
+                            "Forgetting to distribute negative signs",
+                            "Incorrect order of operations"
+                        )
+                    ),
+                    SubjectStats(
+                        subject = "Geometry",
+                        averageScore = 80.0f,
+                        totalQuests = 38,
+                        completedQuests = 32,
+                        studentsExcelling = 10,
+                        studentsStruggling = 5,
+                        mostCommonMistakes = listOf(
+                            "Angle calculation errors",
+                            "Confusion with theorem applications"
+                        )
+                    ),
+                    SubjectStats(
+                        subject = "Statistics",
+                        averageScore = 82.5f,
+                        totalQuests = 30,
+                        completedQuests = 28,
+                        studentsExcelling = 14,
+                        studentsStruggling = 2,
+                        mostCommonMistakes = listOf(
+                            "Mean vs median confusion",
+                            "Probability calculation errors"
+                        )
+                    )
+                ),
+                lastUpdated = System.currentTimeMillis()
             )
         )
     }

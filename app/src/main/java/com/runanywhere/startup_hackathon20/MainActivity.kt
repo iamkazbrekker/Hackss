@@ -124,13 +124,11 @@ fun EduVentureApp() {
         }
 
         Screen.TeacherHome -> {
-            TeacherHomeScreen(
+            RPGTeacherScreenWithNav(
                 viewModel = viewModel,
-                onNavigateToChat = {
-                    // Could add teacher chat navigation
-                },
-                onNavigateToProfile = {
-                    // Could add profile navigation
+                onLogout = {
+                    viewModel.logout()
+                    currentScreen = Screen.RoleSelection
                 }
             )
         }

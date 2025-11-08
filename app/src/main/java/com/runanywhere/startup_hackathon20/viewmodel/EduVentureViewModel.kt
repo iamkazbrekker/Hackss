@@ -41,6 +41,13 @@ class EduVentureViewModel(private val context: Context) : ViewModel() {
     val sharedResources: StateFlow<List<SharedResource>> = repository.sharedResources
     val classRooms: StateFlow<List<ClassRoom>> = repository.classRooms
 
+    // New Enhanced Teacher Features
+    val techDevelopmentCourses: StateFlow<List<TechDevelopmentCourse>> =
+        repository.techDevelopmentCourses
+    val resourceHubItems: StateFlow<List<ResourceHubItem>> = repository.resourceHubItems
+    val studentInsights: StateFlow<List<StudentPerformanceInsight>> = repository.studentInsights
+    val progressDashboards: StateFlow<List<ProgressDashboard>> = repository.progressDashboards
+
     // AI Chat State
     private val _chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatMessages: StateFlow<List<ChatMessage>> = _chatMessages
